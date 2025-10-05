@@ -3,22 +3,34 @@ mov bx, %1
 call prt
 %endmacro
 
+STAGE2_START equ 0x7EFF
+
+%macro println 1
+print %1
+mov bx, new_line
+call prt
+%endmacro
+
+%macro endl 0
+print new_line
+%endmacro
+
 [bits 16]
 [org 0x7c00]
 
-push dx ; dl = boot drive
-
-mov ax, 0x7000
-mov ss, ax ; set stack to the highest (usable) address
-mov sp, 0xFFFF
-mov bp, sp
 
 xor ax, ax ; ax -> 0
-mov cs, ax
+mov ss, ax ; set stack to the highest (usable) address
+mov sp, 0x7BFF
+mov bp, sp
+
+; mov cs, ax
 mov ds, ax
 mov es, ax
 mov fs, ax
 mov gs, ax
+
+push dx ; dl = boot drive
 
 print test
 
@@ -45,17 +57,50 @@ jmp loop
 a20_done:
 
 load_stage2:
+
+print hnum_msg
+
 pop dx
-mov ah, 8 ; get drive geometry
+push dx ; still need it later and mov didn't work
+mov ah, 8 ; get drive geometry (apparently this is bad when you use floopies but whatever)
 int 0x13
+push dx ; save head count
+xor bx, bx
+mov bl, dh
+call prti
+
+print spt_msg
+and cl, 0x3f
+push cx ; save sectors per track
+xor bx, bx
+mov bl, cl
+call prti
+endl
+
+xor ax, ax
+mov es, ax
 
 mov ah, 2
+mov al, 1 ; total sector count
+mov ch, 0
+mov cl, 2 ; second sector (first one is the bootsector)
+mov dx, [bp-2] ; get the saved drive number
+mov dh, 0
+mov bx, STAGE2_START
 
 int 0x13
+jnc read_success
 
+print read_fail
+xor bx, bx
+mov bl, ah
+call prti
+jmp loop
+
+read_success:
 lgdt [GDT_desc]
 
-print gdt
+println gdt
 
 ; enter protected mode
 mov eax, cr0
@@ -89,16 +134,19 @@ GDT_desc:
   dd GDT_start
 
 %include "utils.asm"
-test: db "Ladon bootloader Version 0", 0x0d, 0x0a, 0 ; 0x0d = CR, 0x0a = LF
+
+test: db "Ladon bootloader Version 0" ; 0x0d = CR, 0x0a = LF
+new_line: db 0x0d, 0x0a, 0
+
 a20_fail: db "Could not enable the A20 line!", 0
-gdt: db "GDT loaded!", 0x0d, 0x0a, 0
+read_fail: db "read failed!", 0
+gdt: db "GDT loaded!", 0
+hnum_msg: db "Number of heads: ", 0
+spt_msg: db 0x0d, 0x0a, "Sectors per track: ", 0
 
 [bits 32]
 prot_main:
-  mov ax, 0x08
-  mov cs, ax
-  mov ax, 0x10
-  mov cs, ax
+  mov ax, 0x10 ; cs already set by long jump?
   mov ds, ax
   mov es, ax
   mov fs, ax
@@ -106,7 +154,7 @@ prot_main:
   mov ss, ax
   mov esp, 0x7FFFF ; continue to use this location as it should be safe
 
-  mov byte [0xb8000], 'W'
+  call STAGE2_START
   hlt
   jmp prot_main
 
