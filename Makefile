@@ -6,5 +6,5 @@ qemu: $(BUILD_PREFIX)/boot.bin
 $(BUILD_PREFIX):
 	mkdir -p out
 
-$(BUILD_PREFIX)/boot.bin: boot.asm $(BUILD_PREFIX)
+$(BUILD_PREFIX)/boot.bin: boot.asm utils.asm $(BUILD_PREFIX)
 	nasm -f bin $< -o $@
