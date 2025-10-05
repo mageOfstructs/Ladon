@@ -1,3 +1,4 @@
+#include "printf.h"
 #include <stdint.h>
 int main(void) {
   char msg[] = "Hello World from Stage2!";
@@ -7,4 +8,7 @@ int main(void) {
     *(vmem++) = msg[i];
     *(vmem++) = COLOR;
   }
+
+  putc_init_cursor();
+  printf("\nThis is a printf test!");
 }

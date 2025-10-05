@@ -58,30 +58,30 @@ a20_done:
 
 load_stage2:
 
-print hnum_msg
+; print hnum_msg
 
 pop dx
 push dx ; still need it later and mov didn't work
 mov ah, 8 ; get drive geometry (apparently this is bad when you use floopies but whatever)
 int 0x13
 push dx ; save head count
-xor bx, bx
-mov bl, dh
-call prti
+; xor bx, bx
+; mov bl, dh
+; call prti
 
-print spt_msg
+; print spt_msg
 and cl, 0x3f
 push cx ; save sectors per track
-xor bx, bx
-mov bl, cl
-call prti
-endl
+; xor bx, bx
+; mov bl, cl
+; call prti
+; endl
 
 xor ax, ax
 mov es, ax
 
 mov ah, 2
-mov al, 1 ; total sector count
+mov al, 3 ; total sector count
 mov ch, 0
 mov cl, 2 ; second sector (first one is the bootsector)
 mov dx, [bp-2] ; get the saved drive number
@@ -141,8 +141,8 @@ new_line: db 0x0d, 0x0a, 0
 a20_fail: db "Could not enable the A20 line!", 0
 read_fail: db "read failed!", 0
 gdt: db "GDT loaded!", 0
-hnum_msg: db "Number of heads: ", 0
-spt_msg: db 0x0d, 0x0a, "Sectors per track: ", 0
+; hnum_msg: db "Number of heads: ", 0
+; spt_msg: db 0x0d, 0x0a, "Sectors per track: ", 0
 
 [bits 32]
 prot_main:

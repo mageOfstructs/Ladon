@@ -1,7 +1,7 @@
 BUILD_PREFIX=out
 GCC=i386-elf-gcc
 LD=i386-elf-ld
-GCCFLAGS=-g -ffreestanding
+GCCFLAGS=-g -ffreestanding -m32 -masm=intel
 
 SRCFILES=$(wildcard *.c)
 OBJFILES=$(SRCFILES:%.c=$(BUILD_PREFIX)/%.o)
@@ -16,7 +16,7 @@ $(BUILD_PREFIX)/%.o: %.c
 	$(GCC) $(GCCFLAGS) -c $< -o $@
 
 $(BUILD_PREFIX)/stage2.bin: $(OBJFILES)
-	$(LD) --oformat binary -Ttext 0x7EFF -o $@ $^
+	$(LD) --oformat binary -Ttext 0x7EFF -o $@ out/stage2.o out/kernel_putchar.o out/printf.o
 
 $(BUILD_PREFIX)/stage1.bin: stage1.asm utils.asm $(BUILD_PREFIX)
 	nasm -f bin $< -o $@
