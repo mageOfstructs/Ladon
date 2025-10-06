@@ -15,8 +15,8 @@ $(BUILD_PREFIX):
 $(BUILD_PREFIX)/%.o: %.c
 	$(GCC) $(GCCFLAGS) -c $< -o $@
 
-$(BUILD_PREFIX)/stage2.bin: $(OBJFILES)
-	$(LD) --oformat binary -Ttext 0x7EFF -o $@ out/stage2.o out/kernel_putchar.o out/printf.o
+$(BUILD_PREFIX)/stage2.bin: $(BUILD_PREFIX)/stage2.o $(OBJFILES)
+	$(LD) --oformat binary -Ttext 0x7EFF -o $@ $< $(subst $<,,$+)
 
 $(BUILD_PREFIX)/stage1.bin: stage1.asm utils.asm $(BUILD_PREFIX) $(BUILD_PREFIX)/stage2.bin
 	sed $< -e "s/\(STAGE2_SIZE equ\) .*$$/\1 $(shell sh -c "bc <<< \"$$(du -b out/stage2.bin | cut -f1) / 512\"")/" > $(BUILD_PREFIX)/$<

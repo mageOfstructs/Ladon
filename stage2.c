@@ -1,3 +1,4 @@
+#include "long.h"
 #include "printf.h"
 #include <stdint.h>
 int main(void) {
@@ -10,5 +11,9 @@ int main(void) {
   }
 
   putc_init_cursor();
-  printf("\nThis is a printf test!");
+  printf("\nThis is a printf test!\n");
+
+  if (x64_supported()) {
+    printf("This CPU supports Long Mode!\n");
+  }
 }
