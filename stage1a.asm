@@ -34,14 +34,14 @@ GDT_code:
   dw 0xFFFF     ; lower limit
   dw 0          ; lower base
   db 0          ; lower base 2
-  db 0b10011010 ; reabable code segment with DPL=0
+  db 0b10011010 ; readable code segment with DPL=0
   db 0b11001111 ; granularity, 32bit segment + upper limit
   db 0          ; higher base
 GDT_data:
   dw 0xFFFF     ; lower limit
   dw 0          ; lower base
   db 0          ; lower base 2
-  db 0b10010010 ; reabable code segment with DPL=0
+  db 0b10010010 ; readable data segment with DPL=0
   db 0b11001111 ; granularity, 32bit segment + upper limit
   db 0          ; higher base
 GDT_end:
