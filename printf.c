@@ -82,6 +82,9 @@ char handle_stage1(va_list *args, char format_char) {
   case 'd':
     write_int10(va_arg(*args, int));
     break;
+  case 'l':
+    write_int10(va_arg(*args, uint64_t));
+    break;
   case 'u':
     write_uint(va_arg(*args, int), 10);
     break;
