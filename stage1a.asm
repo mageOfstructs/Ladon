@@ -70,8 +70,8 @@ prot_main:
   mov ss, ax
   mov esp, 0x7FFFF ; continue to use this location as it should be safe
 
-  call STAGE2_START
-  hlt
-  jmp prot_main
-
-times (512-($-$$)) db 0
+  ; HACK: The build system inserts the stage2 code right after this so no jump is neccessary
+  ; call STAGE2_START
+  ; hlt
+  ; jmp prot_main
+  ; STAGE2_START equ STAGE1a_START+$$+1

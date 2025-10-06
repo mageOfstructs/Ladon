@@ -14,4 +14,3 @@ print new_line
 %endmacro
 
 STAGE1a_START equ 0x7EFF
-STAGE2_START equ (STAGE1a_START+512)

@@ -16,4 +16,6 @@ int main(void) {
   if (x64_supported()) {
     printf("This CPU supports Long Mode!\n");
   }
+
+  asm volatile("loop: hlt; jmp loop");
 }
