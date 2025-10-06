@@ -16,12 +16,42 @@ je a20_done
 
 print a20_fail
 jmp loop
-
 a20_done:
 
+; get the memory map
+mov di, 0x502
+xor ebx, ebx
+mov edx, 0x534D4150
+mmap_loop:
+mov eax, 0xE820
+mov ecx, 24
+int 0x15
+
+mov edx, 0x534D4150 ; apparently some BIOSes trash this
+cmp eax, edx
+jne mmap_fail_jne
+jc mmap_fail_jc
+cmp ebx, 0
+je mmap_done
+add di, 24
+jmp mmap_loop
+
+mmap_fail_jne:
+print mmap_jne
+jmp mmap_fail
+mmap_fail_jc:
+print mmap_jc
+mmap_fail:
+print mmap_fail_msg
+jmp loop
+
+mmap_done:
+sub di, 0x502
+mov [0x500], di
 lgdt [GDT_desc]
 
 println gdt
+
 ; enter protected mode
 mov eax, cr0
 or al, 1
@@ -57,6 +87,9 @@ loop:
 %include "utils.asm"
 
 a20_fail: db "Could not enable the A20 line!", 0
+mmap_jc: db "JC", 0
+mmap_jne: db "JNE", 0
+mmap_fail_msg: db "Could not fetch mmap!", 0
 gdt: db "GDT loaded!", 0
 new_line: db 0x0d, 0x0a, 0
 
@@ -68,7 +101,7 @@ prot_main:
   mov fs, ax
   mov gs, ax
   mov ss, ax
-  mov esp, 0x7FFFF ; continue to use this location as it should be safe
+  mov esp, 0x7FFFF ; should be safe enough as long as stage2 doesn't get too big
 
   ; HACK: The build system inserts the stage2 code right after this so no jump is neccessary
   ; call STAGE2_START

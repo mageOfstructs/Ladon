@@ -1,6 +1,14 @@
 #include "long.h"
 #include "printf.h"
 #include <stdint.h>
+
+typedef struct mmape {
+  uint64_t base;
+  uint64_t length;
+  uint32_t type;
+  uint32_t ext_attrs;
+} mmape_t;
+
 int main(void) {
   char msg[] = "Hello World from Stage2!";
   const char COLOR = 11;
@@ -11,7 +19,25 @@ int main(void) {
   }
 
   putc_init_cursor();
-  printf("\nThis is a printf test!\n");
+  printf("\nThis is a printf test %d %p!\n", 43, (void *)0x12345);
+
+  mmape_t *entries = (mmape_t *)0x502;
+  uint32_t totalmem = 0, usram;
+  for (uint16_t i = 0; i < *((uint16_t *)0x500); i += 24) {
+    if (!entries->length)
+      continue;
+    totalmem += entries->length;
+    if (entries->type == 1)
+      usram += entries->length;
+
+    printf("%p-", entries->base);
+    printf("%p", (void *)(entries->base + entries->length));
+    printf(" (%l bytes) Type: %d\n", entries->length, entries->type);
+    entries++;
+  }
+
+  printf("\nTotal RAM: %lM\n", totalmem / 1024);
+  printf("Usable RAM: %lM\n", usram / 1024);
 
   if (x64_supported()) {
     printf("This CPU supports Long Mode!\n");

@@ -6,8 +6,8 @@ STAGE2_SIZE equ 0
 [org 0x7c00]
 
 xor ax, ax ; ax -> 0
-mov ss, ax ; set stack to the highest (usable) address
-mov sp, 0x7BFF
+mov ss, ax
+mov sp, 0x7BFF ; reserve the little 30KiB area for stack
 mov bp, sp
 
 ; mov cs, ax
