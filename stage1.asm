@@ -35,6 +35,7 @@ push dx ; dl = boot drive
 
 print test
 
+disable_ints:
 cli
 ; disable nmi (bc intel stoopid)
 mov dx, 0x70
@@ -42,6 +43,7 @@ in ax, dx
 or ax, 0x80
 out dx, ax
 
+a20_start:
 call ck_a20
 cmp ax, 1
 je a20_done
@@ -59,6 +61,7 @@ a20_done:
 
 load_stage2:
 
+; get drive geometry
 pop dx
 push dx ; still need it later and mov didn't work
 mov ah, 8 ; get drive geometry (apparently this is bad when you use floopies but whatever)
@@ -69,7 +72,7 @@ and cl, 0x3f
 push cx ; save sectors per track
 
 xor ax, ax
-mov es, ax
+mov es, ax ; reset es because that's a thing
 
 mov ah, 2
 mov al, STAGE2_SIZE ; total sector count
