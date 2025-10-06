@@ -66,11 +66,12 @@ uint write_ptr(size_t ptr) {
 uint write_float(double d) {
   uint ret = write_int10((long)d);
   put_char('.');
+  d = d - (long)d;
   uint32_t decimal_part = 0;
   do {
     d *= 10;
-    decimal_part = (uint32_t)d;
   } while ((uint32_t)d > 0);
+  decimal_part = (uint32_t)d;
   return ret + 1 + write_int10(decimal_part);
 }
 
