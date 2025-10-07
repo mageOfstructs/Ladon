@@ -6,7 +6,7 @@ GCCFLAGS=-g -ffreestanding -m32 -masm=intel
 SRCFILES=$(wildcard *.c)
 OBJFILES=$(SRCFILES:%.c=$(BUILD_PREFIX)/%.o)
 
-qemu: $(BUILD_PREFIX)/boot.bin
+qemu: $(BUILD_PREFIX)/disk.img
 	qemu-system-x86_64 $<
 
 $(BUILD_PREFIX):

@@ -1,6 +1,7 @@
 #include "long.h"
 #include "printf.h"
 #include "ata.h"
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct mmape {
@@ -50,7 +51,12 @@ int main(void) {
     uint16_t bootsec[256];
     read_ata(true, 0, 512, bootsec);
     printf("BSSIG: %p\n", bootsec[255]);
-    uint32_t *part_lba_start = &((uint8_t *)buf)[0x1BE + 0x8];
+    uint8_t *buf_bytes = (uint8_t *)bootsec;
+    uint32_t *part_lba_start = (uint32_t *)&buf_bytes[0x1BE + 0x8];
+    uint32_t *part_lba_secs = (uint32_t *)&buf_bytes[0x1BE + 0xC];
+
+    printf("\nDetected partition at %p with %d sectors (%dM)", *part_lba_start,
+           *part_lba_secs, *part_lba_secs * 512 / 1024 / 1024);
   }
 
   asm volatile("loop: hlt; jmp loop");
