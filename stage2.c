@@ -50,6 +50,7 @@ int main(void) {
     uint16_t bootsec[256];
     read_ata(true, 0, 512, bootsec);
     printf("BSSIG: %p\n", bootsec[255]);
+    uint32_t *part_lba_start = &((uint8_t *)buf)[0x1BE + 0x8];
   }
 
   asm volatile("loop: hlt; jmp loop");

@@ -73,5 +73,11 @@ new_line: db 0x0d, 0x0a, 0
 
 read_fail: db "read failed!", 0
 
-times 510-($-$$) db 0
+times 446-($-$$) db 0
+
+PE1: times 16 db 0
+PE2: times 16 db 0
+PE3: times 16 db 0
+PE4: times 16 db 0
+
 dw 0xAA55

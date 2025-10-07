@@ -21,7 +21,7 @@ $(BUILD_PREFIX)/stage2.bin: $(BUILD_PREFIX)/stage2.o $(OBJFILES) | $(BUILD_PREFI
 $(BUILD_PREFIX)/%.bin: %.asm
 	nasm -f bin $< -o $@
 
-$(BUILD_PREFIX)/stage1.bin: stage1.asm utils.asm $(BUILD_PREFIX) $(BUILD_PREFIX)/stage2.bin $(BUILD_PREFIX)/stage1a.bin
+$(BUILD_PREFIX)/stage1.bin: stage1.asm utils.asm $(BUILD_PREFIX)/stage2.bin $(BUILD_PREFIX)/stage1a.bin
 	sed $< -e "s/\(STAGE2_SIZE equ\) .*$$/\1 $(shell sh -c "bc <<< \"($$(du -b out/stage2.bin | cut -f1) + $$(du -b out/stage1a.bin | cut -f1)) / 512 + 1\"")/" > $(BUILD_PREFIX)/$<
 	nasm -f bin $(@:%.bin=%.asm) -o $@
 
@@ -30,6 +30,14 @@ $(BUILD_PREFIX)/boot.bin: $(BUILD_PREFIX)/stage1.bin $(BUILD_PREFIX)/stage1a.bin
 
 $(BUILD_PREFIX)/nullsec.bin:
 	dd if=/dev/zero bs=512B count=1 of=./$@
+
+$(BUILD_PREFIX)/part.img:
+	dd if=/dev/zero of=$@ count=16 bs=1M
+	mkfs.ext2 $@
+
+$(BUILD_PREFIX)/disk.img: $(BUILD_PREFIX)/boot.bin $(BUILD_PREFIX)/part.img
+	./patch_mbr.sh $^
+	cat $<.mbr $(BUILD_PREFIX)/part.img > $@
 
 clear:
 	rm $(BUILD_PREFIX)/*
