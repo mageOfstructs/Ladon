@@ -1,5 +1,6 @@
 #include "long.h"
 #include "printf.h"
+#include "ata.h"
 #include <stdint.h>
 
 typedef struct mmape {
@@ -41,6 +42,14 @@ int main(void) {
 
   if (x64_supported()) {
     printf("This CPU supports Long Mode!\n");
+  }
+
+  uint16_t buf[256];
+  if (identify(buf) == IDENTIFY_ATA) {
+    printf("found ATA!\n");
+    uint16_t bootsec[256];
+    read_ata(true, 0, 512, bootsec);
+    printf("BSSIG: %p\n", bootsec[255]);
   }
 
   asm volatile("loop: hlt; jmp loop");
