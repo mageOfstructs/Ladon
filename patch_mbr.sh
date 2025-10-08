@@ -12,4 +12,4 @@ readonly SECTORS_OF_PART="$(bc <<< "$(du -b $2 | cut -f1) / 512 + 1")"
 cp $1 $OUTFILE
 
 # echo "001BE: 8000 0000 0000 0000 $(printf "%04x" "$(bc <<< "obase=16; $(du -b $1 | cut -f1) + 1")") $(printf "%04x" "$SECTORS_OF_PART")"
-echo "001BE: 8000 0100 0000 0100 $(./big2little_endian.sh $(printf "%08x" "$(bc <<< "$(du -b $1 | cut -f1) + 1")")) $(./big2little_endian.sh $(printf "%08x" "$SECTORS_OF_PART"))" | tee out/mbr_patch | xxd -r - $OUTFILE
+echo "001BE: 8000 0100 0000 0100 $(./big2little_endian.sh $(printf "%08x" "$(du -b $1 | cut -f1)")) $(./big2little_endian.sh $(printf "%08x" "$SECTORS_OF_PART"))" | tee out/mbr_patch | xxd -r - $OUTFILE
