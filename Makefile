@@ -2,13 +2,14 @@ BUILD_PREFIX=out
 GCC=i386-elf-gcc
 LD=i386-elf-ld
 GCCFLAGS=-g -ffreestanding -m32 -masm=intel
+QEMUFLAGS=-chardev file,id=blog,path=./boot.log -serial chardev:blog
 
 HDRFILES=$(wildcard *.h fs/*.h)
 SRCFILES=$(wildcard *.c fs/*.c)
 OBJFILES=$(SRCFILES:%.c=$(BUILD_PREFIX)/%.o)
 
 qemu: $(BUILD_PREFIX)/disk.img
-	qemu-system-x86_64 $<
+	qemu-system-x86_64 $(QEMUFLAGS) $<
 
 $(BUILD_PREFIX):
 	mkdir -p out/fs

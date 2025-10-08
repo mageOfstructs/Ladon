@@ -1,6 +1,7 @@
 #include "long.h"
 #include "printf.h"
 #include "ata.h"
+#include "serial.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -12,6 +13,7 @@ typedef struct mmape {
 } mmape_t;
 
 int main(void) {
+  init_serial();
   char msg[] = "Hello World from Stage2!";
   const char COLOR = 11;
   char *vmem = (char *)0xb8000;
