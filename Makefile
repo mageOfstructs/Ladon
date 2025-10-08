@@ -3,14 +3,15 @@ GCC=i386-elf-gcc
 LD=i386-elf-ld
 GCCFLAGS=-g -ffreestanding -m32 -masm=intel
 
-SRCFILES=$(wildcard *.c)
+HDRFILES=$(wildcard *.h fs/*.h)
+SRCFILES=$(wildcard *.c fs/*.c)
 OBJFILES=$(SRCFILES:%.c=$(BUILD_PREFIX)/%.o)
 
 qemu: $(BUILD_PREFIX)/disk.img
 	qemu-system-x86_64 $<
 
 $(BUILD_PREFIX):
-	mkdir -p out
+	mkdir -p out/fs
 
 $(BUILD_PREFIX)/%.o: %.c
 	$(GCC) $(GCCFLAGS) -c $< -o $@
@@ -39,5 +40,5 @@ $(BUILD_PREFIX)/disk.img: $(BUILD_PREFIX)/boot.bin $(BUILD_PREFIX)/part.img
 	./patch_mbr.sh $^
 	cat $<.mbr $(BUILD_PREFIX)/part.img > $@
 
-clear:
-	rm $(BUILD_PREFIX)/*
+clear: $(BUILD_PREFIX)
+	rm -f $(BUILD_PREFIX)/*.*
