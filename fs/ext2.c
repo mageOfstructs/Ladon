@@ -5,13 +5,16 @@
 
 static uint16_t sp_buf[1024];
 fs_ext2_ctx_t FS_GLOBAL_CTX;
+static inode_t root_inode_buf;
 
-void dump_block(void *b) {
-  for (int i = 0; i < FS_GLOBAL_CTX.block_sz; i++) {
+void dump_block_sz(void *b, uint32_t sz) {
+  for (int i = 0; i < sz; i++) {
     printf("%p ", ((char *)b)[i]);
   }
   printf("\n");
 }
+
+void dump_block(void *b) { dump_block_sz(b, FS_GLOBAL_CTX.block_sz); }
 
 static inline bool is_ext2_fs(superblock_t *sp) { return sp->sig == EXT2_SIG; }
 
@@ -60,8 +63,9 @@ static inline uint32_t get_inode_sz(superblock_t *sp) {
 
 int __read_block(fs_ext2_ctx_t *ctx, uint32_t bg, uint32_t block,
                  uint16_t *ret) {
-  uint32_t real_addr =
-      bg * ctx->sp->blocks_per_bg * ctx->block_sz + block * ctx->block_sz;
+  uint32_t real_addr = ctx->part_off +
+                       bg * ctx->sp->blocks_per_bg * ctx->block_sz +
+                       block * ctx->block_sz;
   return read_ata(true, real_addr, ctx->block_sz, ret);
 }
 
@@ -80,7 +84,7 @@ void __read_inode(fs_ext2_ctx_t *ctx, uint32_t inode_addr, inode_t *ret) {
   uint32_t bg_inodet_index = (inode_addr - 1) % ctx->sp->inodes_per_bg;
   uint32_t containing_block = (bg_inodet_index * ctx->inode_sz) / ctx->block_sz;
 
-  uint16_t *inode_buf = kalloc(ctx->block_sz);
+  uint16_t inode_buf[ctx->block_sz / 2];
   uint32_t inode_start = bg_inodet_index * ctx->inode_sz;
   printf("Inode BG: %d\n", block_group);
   printf("Inode Table Index: %d\n", bg_inodet_index);
@@ -95,7 +99,6 @@ void __read_inode(fs_ext2_ctx_t *ctx, uint32_t inode_addr, inode_t *ret) {
                            (inode_start / ctx->block_sz),
                        inode_buf) == 0);
   memcpy(&inode_buf[(inode_start % ctx->block_sz) / 2], ret, sizeof(inode_t));
-  kfree(inode_buf, ctx->block_sz);
   printf("read_inode_end!\n");
 }
 
@@ -107,7 +110,7 @@ void dbg_inode_dir(fs_ext2_ctx_t *ctx, inode_t *i) {
   printf("Inode Type: %p\n", i->typeperm);
   printf("Inode Size: %d\n", i->lsize);
   int cur_ptr = 0;
-  uint16_t *dir_entry_buf = kalloc(ctx->block_sz);
+  uint16_t dir_entry_buf[ctx->block_sz / 2];
   KASSERT(__read_block(ctx, 0, i->dptrs[0], dir_entry_buf) == 0);
   dir_entry_t *dir_entry = (dir_entry_t *)dir_entry_buf;
   printf("Let's see what's inside the root directory:\n");
@@ -129,7 +132,6 @@ void dbg_inode_dir(fs_ext2_ctx_t *ctx, inode_t *i) {
         (void *)dir_entry + (8 + name_length) + 4 - (8 + name_length) % 4;
     cur_ptr++;
   }
-  kfree(dir_entry_buf, ctx->block_sz);
 }
 
 int __get_inode_from_dir(fs_ext2_ctx_t *ctx, const inode_t *dir, char *name,
@@ -137,7 +139,7 @@ int __get_inode_from_dir(fs_ext2_ctx_t *ctx, const inode_t *dir, char *name,
   if (!is_dir(dir))
     return -1;
   int cur_ptr = 0;
-  uint16_t *dir_entry_buf = kalloc(ctx->block_sz);
+  uint16_t dir_entry_buf[ctx->block_sz / 2];
   KASSERT(dir_entry_buf);
   printf("Let's see what's inside the root directory:\n");
 
@@ -167,7 +169,6 @@ int __get_inode_from_dir(fs_ext2_ctx_t *ctx, const inode_t *dir, char *name,
     }
   }
 
-  kfree(dir_entry_buf, ctx->block_sz);
   return 1;
 }
 
@@ -253,9 +254,10 @@ int read_from_inode(uint32_t inode, int block_cnt, void *ret) {
   return __read_from_inode(&FS_GLOBAL_CTX, i, block_cnt, ret);
 }
 
-void init_fs() {
-  read_ata(true, 1024, 1024, sp_buf);
+void init_fs(uint32_t part_off) {
+  read_ata(true, part_off + 1024, 1024, sp_buf);
   superblock_t *sp = (superblock_t *)sp_buf;
+  dump_block_sz(sp, 1024);
 
   int fs_ok_ret = is_fs_not_ok(sp);
   if (fs_ok_ret) {
@@ -268,6 +270,7 @@ void init_fs() {
   FS_GLOBAL_CTX.block_sz = get_block_size(sp);
   FS_GLOBAL_CTX.dir_have_ti =
       sp->required_features & FEAT_REQ_DIR_HAS_TYPE ? 1 : 0;
+  FS_GLOBAL_CTX.part_off = part_off;
   printf("Detected inode size as %d", FS_GLOBAL_CTX.inode_sz);
 
   printf("Number of blocks: %d\n", sp->total_blocks);
@@ -280,9 +283,10 @@ void init_fs() {
   printf("Version: %d.%d\n", sp->major_version, sp->min_version);
 
   uint32_t bgdt_size = sizeof(bg_desc_t) * get_number_of_bgs(sp);
-  bg_desc_t *bgdt = kalloc(bgdt_size);
+  bg_desc_t bgdt[bgdt_size];
+  // bg_desc_t *bgdt = kalloc(bgdt_size);
   KASSERT(bgdt);
-  read_ata(true, 2048, bgdt_size, (uint16_t *)bgdt);
+  read_ata(true, part_off + 2048, bgdt_size, (uint16_t *)bgdt);
   FS_GLOBAL_CTX.bgdt = bgdt;
   printf("%d free inodes in block group 0\n",
          bgdt[0].unallocated_inodes_in_group);
@@ -296,23 +300,6 @@ void init_fs() {
   // for (int i = inode_sz*1; i < sizeof(inode_t) + 0x80; i++)
   //   printf("%p ", inode_buf[i]);
 
-  FS_GLOBAL_CTX.root = kalloc(sizeof(inode_t));
+  FS_GLOBAL_CTX.root = &root_inode_buf;
   read_inode(2, FS_GLOBAL_CTX.root); // 2 is the inode of the root directory
-  return;
-
-  dbg_inode_dir(&FS_GLOBAL_CTX, FS_GLOBAL_CTX.root);
-  uint32_t hello_inum;
-  printf("awa");
-  inode_t hello_node;
-  KASSERT(traverse("hello/", FS_GLOBAL_CTX.root, &hello_node) == 0);
-  // get_inode_from_dir(FS_GLOBAL_CTX.root, "hello", 5, &hello_inum);
-  printf("Hello inode: %d\n", hello_inum);
-  void *buf = kalloc(FS_GLOBAL_CTX.block_sz);
-  memset(buf, 0, FS_GLOBAL_CTX.block_sz);
-  printf("read %d blocks\n",
-         __read_from_inode(&FS_GLOBAL_CTX, hello_node, 1, buf));
-  printf("%s\n", (char *)buf);
-  // read_from_inode(12, 1, buf);
-  // printf("%s", (char *)buf);
-  kfree(buf, FS_GLOBAL_CTX.block_sz);
 }

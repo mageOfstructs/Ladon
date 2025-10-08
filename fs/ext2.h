@@ -8,6 +8,7 @@
 #include "../printf.h"
 #include "../mem.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 #define EXT2_SIG 0xef53
 
@@ -107,6 +108,7 @@ typedef struct fs_ext2_ctx {
   uint16_t inode_sz;
   uint16_t block_sz;
   inode_t *root;
+  uint32_t part_off;
   bool dir_have_ti;
 } fs_ext2_ctx_t;
 
@@ -128,7 +130,7 @@ typedef struct fs_ext2_ctx {
 
 void dump_block(void *b);
 int read_block_addr(uint32_t block, uint16_t *ret);
-void init_fs();
+void init_fs(uint32_t part_off);
 int traverse(char *path, const inode_t *start_dir, inode_t *ret);
 
 #endif // !EXT2_H
