@@ -44,7 +44,7 @@ $(BUILD_PREFIX)/test_elf: test/main.c
 $(BUILD_PREFIX)/part.img: $(BUILD_PREFIX)/test_elf
 	dd if=/dev/zero of=$@ count=16 bs=1M
 	mkfs.ext2 $@
-	mkdir -p /mnt/tmp
+	sudo mkdir -p /mnt/tmp
 	sudo mount $@ /mnt/tmp
 	sudo sh -c "echo \"Hello World!\" >> /mnt/tmp/hello"
 	sudo cp $< /mnt/tmp
