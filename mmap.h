@@ -1,3 +1,6 @@
+#ifndef MMAP_H
+#define MMAP_H
+
 #include <stdint.h>
 
 typedef struct mmape {
@@ -6,3 +9,5 @@ typedef struct mmape {
   uint32_t type;
   uint32_t ext_attrs;
 } mmape_t;
+
+#endif // !MMAP_H
