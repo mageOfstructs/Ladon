@@ -1,6 +1,8 @@
 #include "long.h"
 #include "printf.h"
 #include "ata.h"
+#include "fs/ext2.h"
+#include "serial.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -12,6 +14,7 @@ typedef struct mmape {
 } mmape_t;
 
 int main(void) {
+  init_serial();
   char msg[] = "Hello World from Stage2!";
   const char COLOR = 11;
   char *vmem = (char *)0xb8000;
@@ -55,8 +58,9 @@ int main(void) {
     uint32_t *part_lba_start = (uint32_t *)&buf_bytes[0x1BE + 0x8];
     uint32_t *part_lba_secs = (uint32_t *)&buf_bytes[0x1BE + 0xC];
 
-    printf("\nDetected partition at %p with %d sectors (%dM)", *part_lba_start,
-           *part_lba_secs, *part_lba_secs * 512 / 1024 / 1024);
+    println("\nDetected partition at %p with %d sectors (%dM)", *part_lba_start,
+            *part_lba_secs, *part_lba_secs * 512 / 1024 / 1024);
+    init_fs(*part_lba_start);
   }
 
   asm volatile("loop: hlt; jmp loop");

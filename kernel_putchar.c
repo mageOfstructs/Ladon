@@ -1,4 +1,5 @@
 #include "printf.h"
+#include "serial.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -8,6 +9,7 @@ volatile static uint16_t *cursor = VMEM_START;
 void putc_init_cursor() { cursor = VMEM_START; }
 
 void put_char(char c) {
+  serial_putc(c);
   switch (c) {
   case '\n':
     cursor += VGA_WIDTH - (cursor - VMEM_START) % VGA_WIDTH;

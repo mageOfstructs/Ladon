@@ -28,6 +28,8 @@
 #define VGA_BLACK 0x0
 #define VGA_WHITE 0xF
 
+#define println(format, ...) printf(format "\n", __VA_ARGS__)
+
 int printf(const char *format, ...);
 void putc_init_cursor();
 

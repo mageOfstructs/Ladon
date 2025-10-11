@@ -5,12 +5,12 @@ display_library: x, options="gui_debug"
 memory: guest=32, host=32, block_size=128
 romimage: file="/usr/share/bochs/BIOS-bochs-latest", address=0x00000000, options=none, flash_data=none
 vgaromimage: file="/usr/share/bochs/VGABIOS-lgpl-latest"
-boot: floppy
+boot: disk
 floppy_bootsig_check: disabled=0
-floppya: 1_44="out/boot.bin", status=inserted
+# no floppya
 # no floppyb
 ata0: enabled=true, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=none
+ata0-master: type=disk, path="./out/disk.img", mode=flat, cylinders=32, heads=1, spt=32, sect_size=512, model="Generic 1234", biosdetect=auto, translation=auto
 ata0-slave: type=none
 ata1: enabled=true, ioaddr1=0x170, ioaddr2=0x370, irq=15
 ata1-master: type=none
