@@ -1,3 +1,4 @@
+#include "elf.h"
 #include "long.h"
 #include "printf.h"
 #include "ata.h"
@@ -5,13 +6,7 @@
 #include "serial.h"
 #include <stddef.h>
 #include <stdint.h>
-
-typedef struct mmape {
-  uint64_t base;
-  uint64_t length;
-  uint32_t type;
-  uint32_t ext_attrs;
-} mmape_t;
+#include "mmap.h"
 
 int main(void) {
   init_serial();
@@ -27,18 +22,18 @@ int main(void) {
   printf("\nThis is a printf test %d %p!\n", 43, (void *)0x12345);
 
   mmape_t *entries = (mmape_t *)0x502;
+  uint32_t entries_l = *((uint16_t *)0x500) / 24;
   uint32_t totalmem = 0, usram;
-  for (uint16_t i = 0; i < *((uint16_t *)0x500); i += 24) {
-    if (!entries->length)
+  for (uint16_t i = 0; i < entries_l; i++) {
+    if (!entries[i].length)
       continue;
-    totalmem += entries->length;
-    if (entries->type == 1)
-      usram += entries->length;
+    totalmem += entries[i].length;
+    if (entries[i].type == 1)
+      usram += entries[i].length;
 
-    printf("%p-", entries->base);
-    printf("%p", (void *)(entries->base + entries->length));
-    printf(" (%l bytes) Type: %d\n", entries->length, entries->type);
-    entries++;
+    printf("%p-", entries[i].base);
+    printf("%p", (void *)(entries[i].base + entries[i].length));
+    printf(" (%l bytes) Type: %d\n", entries[i].length, entries[i].type);
   }
 
   printf("\nTotal RAM: %lM\n", totalmem / 1024);
@@ -61,6 +56,8 @@ int main(void) {
     println("\nDetected partition at %p with %d sectors (%dM)", *part_lba_start,
             *part_lba_secs, *part_lba_secs * 512 / 1024 / 1024);
     init_fs(*part_lba_start);
+
+    load_elf("test_elf", entries, entries_l);
   }
 
   asm volatile("loop: hlt; jmp loop");

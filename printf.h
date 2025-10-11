@@ -31,6 +31,7 @@
 #define println(format, ...) printf(format "\n", __VA_ARGS__)
 
 int printf(const char *format, ...);
+void display_str(const char *str, uint32_t len);
 void putc_init_cursor();
 
 #endif // !PRINTF_H
