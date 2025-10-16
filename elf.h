@@ -1,8 +1,8 @@
 #ifndef ELF_H
 #define ELF_H
 
-#include <stdint.h>
 #include "mmap.h"
+#include <stdint.h>
 #define ELF_NIDENT 16
 
 #define CK_ELF_MAGIC_INVALID -1
@@ -80,8 +80,9 @@ enum ShT_Types {
 };
 
 enum ShT_Attributes {
-  SHF_WRITE = 0x01, // Writable section
-  SHF_ALLOC = 0x02  // Exists in memory
+  SHF_WRITE = 0x01,    // Writable section
+  SHF_ALLOC = 0x02,    // Exists in memory
+  SHF_EXECINSTR = 0x04 // has executable code
 };
 
 #define EM_386 (3)     // x86 Machine Type

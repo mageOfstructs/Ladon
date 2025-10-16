@@ -1,6 +1,6 @@
 #include "elf.h"
-#include "log.h"
 #include "fs/ext2.h"
+#include "log.h"
 #include "printf.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -92,7 +92,8 @@ void dump_sht(Elf32_Ehdr *hdr) {
       printf("Unknown Type");
     }
 
-    printf(" (%d bytes) at %p", sh->sh_size, (void *)sh->sh_offset);
+    printf(" (%d bytes) at %p (load at %p)", sh->sh_size, (void *)sh->sh_offset,
+           (void *)sh->sh_addr);
     if (hdr->e_shstrndx != SHN_UNDEF && sh->sh_name != SHN_UNDEF) {
       printf(" '%s'", lookup_string(hdr, sh->sh_name));
     }
@@ -135,6 +136,23 @@ int load_elf(char *path, mmape_t *mmap_entries, uint32_t mmap_entries_l) {
   }
 
   dump_sht(hdr);
+
+  Elf32_Shdr *exec_sec = NULL;
+  for (int i = 0; i < hdr->e_shnum; i++) {
+    Elf32_Shdr *sh = elf_section(hdr, i);
+    sh->sh_addr = (Elf32_Addr)(elf_buf + sh->sh_offset);
+    if (sh->sh_flags & SHF_EXECINSTR) {
+      exec_sec = sh;
+    }
+  }
+  if (exec_sec) {
+    int (*main)() = (int (*)())exec_sec->sh_addr;
+    log("Attempting to jump to %p\n", exec_sec->sh_addr);
+    int ret = main();
+    for (;;)
+      asm("hlt");
+    log("ELF exited with %d\n", ret);
+  }
 
   return 0;
 }
