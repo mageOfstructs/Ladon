@@ -4,6 +4,7 @@
 #include "printf.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "string.h"
 
 extern fs_ext2_ctx_t FS_GLOBAL_CTX;
 const static uint32_t ELF_MAGIC = (0x7F << 24) | ('E' << 16) | ('L' << 8) | 'F';
@@ -60,10 +61,22 @@ int ck_elf_magic(Elf32_Ehdr *hdr) {
   return CK_ELF_MAGIC_INVALID;
 }
 
+void dump_symtbl(Elf32_Ehdr *hdr, Elf32_Shdr *st, Elf32_Shdr *sst) {
+  Elf32_Shdr *strtab = elf_section(hdr, hdr->e_shstrndx);
+  Elf32_Sym *sym_start = (Elf32_Sym *)((char *)hdr + st->sh_offset);
+  for (int i = 0; i < st->sh_size / st->sh_entsize; i++) {
+    if (!sym_start[i].st_name)
+      continue;
+    char *symname = (char *)hdr + sst->sh_offset + sym_start[i].st_name;
+    printf("Symbol %d: %s\n", i, symname);
+  }
+}
+
 void dump_sht(Elf32_Ehdr *hdr) {
   if (hdr->e_shstrndx == SHN_UNDEF) {
     warn("String table missing\n");
   }
+  Elf32_Shdr *symtab, *symstrtab;
   for (int i = 0; i < hdr->e_shnum; i++) {
     Elf32_Shdr *sh = elf_section(hdr, i);
     switch (sh->sh_type) {
@@ -75,9 +88,14 @@ void dump_sht(Elf32_Ehdr *hdr) {
       break;
     case SHT_SYMTAB:
       printf("Symbol Table");
+      symtab = sh;
       break;
     case SHT_STRTAB:
       printf("String Table");
+      int ret = strcmp(".strtab", lookup_string(hdr, sh->sh_name));
+      printf("ret: %d", ret);
+      if (!ret)
+        symstrtab = sh;
       break;
     case SHT_RELA:
       printf("Relocatable Section A");
@@ -98,6 +116,9 @@ void dump_sht(Elf32_Ehdr *hdr) {
       printf(" '%s'", lookup_string(hdr, sh->sh_name));
     }
     printf("\n");
+  }
+  if (symtab && symstrtab) {
+    dump_symtbl(hdr, symtab, symstrtab);
   }
 }
 
@@ -122,10 +143,10 @@ int load_elf(char *path, mmape_t *mmap_entries, uint32_t mmap_entries_l) {
     err("Only x86_32 elfs supported!");
     return 3;
   }
-  // if (hdr->e_type != EM_386) {
-  //   err("ELF not of the x86 type!");
-  //   return 4;
-  // }
+  if (hdr->e_machine != EM_386) {
+    err("ELF not of the x86 type!");
+    return 4;
+  }
   if (hdr->e_version != EV_CURRENT) {
     warn("Unknown ELF Version, trusting that it is backwards compatible with "
          "Version 1...");

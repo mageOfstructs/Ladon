@@ -69,6 +69,8 @@ typedef struct {
 #define SHN_UNDEF (0x00) // Undefined/Not Present
 #define SHN_ABS 0xFFF1   // Absolute symbol
 
+#define ST_UNDEF (0x00) // Undefined/Not Present
+
 enum ShT_Types {
   SHT_NULL = 0,     // Null section
   SHT_PROGBITS = 1, // Program information
@@ -84,6 +86,15 @@ enum ShT_Attributes {
   SHF_ALLOC = 0x02,    // Exists in memory
   SHF_EXECINSTR = 0x04 // has executable code
 };
+
+typedef struct {
+  Elf32_Word st_name;
+  Elf32_Addr st_value;
+  Elf32_Word st_size;
+  unsigned char st_info;
+  unsigned char st_other;
+  Elf32_Half st_shndx;
+} Elf32_Sym;
 
 #define EM_386 (3)     // x86 Machine Type
 #define EV_CURRENT (1) // ELF Current Version
