@@ -38,8 +38,12 @@ $(BUILD_PREFIX)/nullsec.bin: $(BUILD_PREFIX)/preboot.bin
 	dd if=/dev/zero bs=$(shell sh -c "bc <<< \"(1024 - $$(du -b $< | cut -f1) % 1024) % 1024\"")B count=1 of=./$@
 
 $(BUILD_PREFIX)/test_elf: test/main.c
-	$(GCC) $(GCCFLAGS) -c -o $(subst .c,.o,$<) $<
-	$(LD) $(subst .c,.o,$<) -o $@
+ifdef TEST_ELF_AS_OBJ
+		$(GCC) $(GCCFLAGS) -c -o $@ $<
+else
+		$(GCC) $(GCCFLAGS) -c -o $(subst .c,.o,$<) $<
+		$(LD) $(subst .c,.o,$<) -o $@
+endif
 
 $(BUILD_PREFIX)/part.img: $(BUILD_PREFIX)/test_elf
 	dd if=/dev/zero of=$@ count=16 bs=1M
@@ -55,4 +59,5 @@ $(BUILD_PREFIX)/disk.img: $(BUILD_PREFIX)/boot.bin $(BUILD_PREFIX)/part.img
 	cat $<.mbr $(BUILD_PREFIX)/part.img > $@
 
 clear: $(BUILD_PREFIX)
-	rm -f $(BUILD_PREFIX)/*.*
+	-rm -f $(BUILD_PREFIX)/**/*
+	-rm test/*.o
