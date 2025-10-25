@@ -32,8 +32,8 @@ void put_char(char c) {
       asm("mov ecx, " CONST_TOSTR(VGA_WIDTH_BYTES) "\n\t"
                                                    "mov esi, %0\n\t"
                                                    "mov edi, %1\n\t"
-                                                   "rep; movsb" ::"g"(dst),
-          "g"(last_dst));
+                                                   "rep; movsb" ::"r"(dst),
+          "r"(last_dst));
       last_dst = dst;
     }
     for (size_t i = 0; i < VGA_WIDTH_BYTES; i++) {

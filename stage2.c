@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "mmap.h"
+#include "avl.h"
+#include "utils.h"
 
 int main(void) {
   init_serial();
@@ -43,6 +45,27 @@ int main(void) {
     printf("This CPU supports Long Mode!\n");
   }
 
+  // paging
+  tree_node_t tree_buf[entries_l];
+  tree_buf[0] = TREE_NODE_INIT;
+  int first_free_space = get_next_free_space(entries, entries_l, 0);
+  KASSERT(first_free_space != -1);
+  printf("Found free space at %d\n", first_free_space);
+  tree_buf[0].val = &entries[first_free_space];
+
+  int next_free_space = first_free_space + 1, tree_bufi = 1;
+  while ((next_free_space =
+              get_next_free_space(entries, entries_l, next_free_space)) != -1) {
+    printf("Found free space at %d\n", next_free_space);
+    tree_buf[tree_bufi] = TREE_NODE_INIT;
+    tree_buf[tree_bufi].val = &entries[next_free_space];
+    tree_bufi++;
+    append_ordered(tree_buf, &tree_buf[tree_bufi], cmp_mmape_len);
+    next_free_space++;
+  }
+  dbg_tree(tree_buf, 0, tostr_mmape_len);
+  asm volatile("loop: hlt; jmp loop");
+
   uint16_t buf[256];
   if (identify(buf) == IDENTIFY_ATA) {
     printf("found ATA!\n");
@@ -59,6 +82,4 @@ int main(void) {
 
     load_elf("test_elf", entries, entries_l);
   }
-
-  asm volatile("loop: hlt; jmp loop");
 }
