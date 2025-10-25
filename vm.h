@@ -42,15 +42,33 @@ typedef struct pde_ps {
 } pde_ps_t;
 
 enum PDE_FLAGS {
-  PRESENT = 0,
-  RW = 1,
-  US = 2,
-  PWT = 3,
-  PCD = 4,
-  ACCESSED = 5,
-  AVL1 = 6,
-  PS = 7
+  PD_PRESENT = 0,
+  PD_RW = 1,
+  PD_US = 2,
+  PD_PWT = 3,
+  PD_PCD = 4,
+  PD_ACCESSED = 5,
+  PD_AVL1 = 6,
+  PD_PS = 7
 };
+
+enum PTE_FLAGS {
+  PT_PRESENT = 0,
+  PT_RW = 1,
+  PT_US = 2,
+  PT_PWT = 3,
+  PT_PCD = 4,
+  PT_ACCESSED = 5,
+  PT_DIRTY = 6,
+  PT_PAT = 7
+};
+
+typedef struct pte {
+  uint8_t flags;
+  uint8_t g : 1;
+  uint8_t avl : 3;
+  uint32_t addr : 20;
+} pte_t;
 
 enum setup_addrsp_ret { SA_OK = 0, SA_NOSPACE = 1 };
 
