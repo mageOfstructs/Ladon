@@ -14,6 +14,9 @@ void put_char(char c) {
   case '\n':
     cursor += VGA_WIDTH - (cursor - VMEM_START) % VGA_WIDTH;
     break;
+  case '\t':
+    cursor += 4;
+    break;
   case '\r':
     cursor -= (cursor - VMEM_START) % VGA_WIDTH;
     break;
