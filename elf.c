@@ -1,6 +1,7 @@
 #include "elf.h"
 #include "fs/ext2.h"
 #include "log.h"
+#include "mmap.h"
 #include "printf.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,9 +24,11 @@ static inline char *lookup_string(Elf32_Ehdr *hdr, uint32_t off) {
 }
 
 int find_memory_hole(mmape_t *entries, uint32_t entries_l, uint32_t elf_sz) {
-  for (int i = entries_l - 1; i > -1; i--) {
-    if (!entries[i].length || entries[i].type != 1)
-      continue;
+  int i = 0;
+  while (i < entries_l) {
+    i = get_next_free_space(entries, entries_l, i);
+    if (i == -1)
+      return -1;
     if (entries[i].length >= elf_sz) {
       return i;
     }
