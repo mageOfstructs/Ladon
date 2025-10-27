@@ -52,6 +52,12 @@ lgdt [GDT_desc]
 
 println gdt
 
+; try clearing screen by reloading video mode
+mov ah, 0xF ; Number for "Get Video mode"; puts video mode in AL
+int 0x10
+mov ah, 0 ; Number for "Set Video mode"; sets video mode to contents of AL
+int 0x10
+
 ; enter protected mode
 mov eax, cr0
 or al, 1
