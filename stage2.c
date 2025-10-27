@@ -1,14 +1,15 @@
-#include "elf.h"
-#include "long.h"
-#include "printf.h"
 #include "ata.h"
+#include "avl.h"
+#include "elf.h"
 #include "fs/ext2.h"
+#include "log.h"
+#include "long.h"
+#include "mmap.h"
+#include "printf.h"
 #include "serial.h"
+#include "utils.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "mmap.h"
-#include "avl.h"
-#include "utils.h"
 
 int main(void) {
   init_serial();
@@ -25,21 +26,29 @@ int main(void) {
 
   mmape_t *entries = (mmape_t *)0x502;
   uint32_t entries_l = *((uint16_t *)0x500) / 24;
-  uint32_t totalmem = 0, usram;
+  uint32_t totalmem = 0, usram = 0;
+  uint64_t last_section_end = 0;
+
   for (uint16_t i = 0; i < entries_l; i++) {
     if (!entries[i].length)
       continue;
+    if (last_section_end > entries[i].base)
+      warn("Overlapping section found!\n");
+    if (last_section_end != entries[i].base)
+      warn("Disjunct sections found!\n");
+
     totalmem += entries[i].length;
-    if (entries[i].type == 1)
+    if (entries[i].type == MMAP_FREE)
       usram += entries[i].length;
 
-    printf("%p-", entries[i].base);
-    printf("%p", (void *)(entries[i].base + entries[i].length));
-    printf(" (%l bytes) Type: %d\n", entries[i].length, entries[i].type);
+    last_section_end = entries[i].base + entries[i].length;
+
+    printf("%p-%lx (%d bytes) Type: %d\n", (void *)entries[i].base,
+           last_section_end, (int)entries[i].length, entries[i].type);
   }
 
-  printf("\nTotal RAM: %lM\n", totalmem / 1024);
-  printf("Usable RAM: %lM\n", usram / 1024);
+  printf("\nTotal RAM: %dM\n", totalmem / 1024);
+  printf("Usable RAM: %dM\n", usram / 1024);
 
   if (x64_supported()) {
     printf("This CPU supports Long Mode!\n");
