@@ -1,3 +1,5 @@
+#include "printf.h"
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -20,13 +22,8 @@ void display_str(const char *str, uint32_t len) {
   }
 }
 
-uint write_int(long num, uint base) {
+uint write_uint(long num, uint base) {
   uint ret = 0;
-  if (num < 0) {
-    put_char('-');
-    num = -num;
-    ret++;
-  }
 
 #define MAX_DIGITS 16
   char buf[MAX_DIGITS] = {0};
@@ -49,18 +46,45 @@ uint write_int(long num, uint base) {
   return ret;
 }
 
-uint write_uint(long num, uint32_t base) {
-  if (num < 0)
-    num = num * (-1);
-  return write_int(num, base);
+uint write_uint64(uint64_t num, uint base) {
+  uint ret = num >> 32 ? write_uint(num >> 32, base) : 0;
+  if (ret) {
+    unsigned long lower = (unsigned long)num;
+    uint digits = 0, padding = 0;
+    while (lower > 0) {
+      lower /= base;
+      digits++;
+    }
+    uint32_t max = __INT_MAX__;
+    while (max > 0) {
+      max /= base;
+      padding++;
+    }
+
+    padding -= digits;
+    for (int i = 0; i < padding; i++)
+      put_char('0');
+    ret += padding;
+  }
+  return ret + write_uint((long)num, base);
+}
+
+uint write_int(long num, uint32_t base) {
+  uint ret = 0;
+  if (num < 0) {
+    put_char('-');
+    num = -num;
+    ret++;
+  }
+  return ret + write_uint(num, base);
 }
 
 uint write_int10(long num) { return write_int(num, 10); }
 
-uint write_ptr(size_t ptr) {
+uint write_ptr(void *ptr) {
   put_char('0');
   put_char('x');
-  return 2 + write_uint(ptr, 16);
+  return 2 + write_uint((long)ptr, 16);
 }
 
 uint write_float(double d) {
@@ -75,8 +99,8 @@ uint write_float(double d) {
   return ret + 1 + write_int10(decimal_part);
 }
 
-char handle_stage1(va_list *args, char format_char) {
-  switch (format_char) {
+char handle_stage1(va_list *args, const char *format_start) {
+  switch (*format_start) {
   case 's':
     write_str(va_arg(*args, char *));
     break;
@@ -84,13 +108,22 @@ char handle_stage1(va_list *args, char format_char) {
     write_int10(va_arg(*args, int));
     break;
   case 'l':
-    write_int10(va_arg(*args, uint64_t));
+    if (format_start[1] == 'x') {
+      put_char('0'); // TODO: refactor
+      put_char('x');
+      write_uint64(va_arg(*args, uint64_t), 16);
+      return 1;
+    } else
+      write_uint64(va_arg(*args, uint64_t), 10);
+    break;
+  case 'x':
+    write_ptr((void *)va_arg(*args, uint32_t));
     break;
   case 'u':
     write_uint(va_arg(*args, int), 10);
     break;
   case 'p':
-    write_ptr(va_arg(*args, size_t));
+    write_ptr(va_arg(*args, void *));
     break;
   case 'f':
     write_float(va_arg(*args, double));
@@ -109,17 +142,18 @@ int vaprintf(const char *format, va_list args) {
   ;
   while (format[i]) {
     if (stage == 1) {
-      stage += handle_stage1(&args, format[i]);
-      goto loopend;
-    }
-    switch (format[i]) {
-    case '%':
-      stage++;
-      break;
-    default:
-      put_char(format[i]);
-    }
-  loopend:
+      stage += handle_stage1(&args, &format[i]);
+    } else if (stage == 2)
+      stage = 0;
+    else
+      switch (format[i]) {
+      case '%':
+        stage++;
+        break;
+      default:
+        put_char(format[i]);
+      }
+
     i++;
   }
 
