@@ -1,6 +1,8 @@
 BUILD_PREFIX=out
-GCC=i386-elf-gcc
-LD=i386-elf-ld
+
+CROSSCOMPILER_PREFIX=/usr/local/i486gcc/bin
+GCC=$(CROSSCOMPILER_PREFIX)/i486-unknown-elf-gcc
+LD=$(CROSSCOMPILER_PREFIX)/i486-unknown-elf-ld
 GCCFLAGS=-g -ffreestanding -m32 -masm=intel
 QEMUFLAGS=-chardev file,id=blog,path=./boot.log -serial chardev:blog
 
@@ -10,6 +12,8 @@ OBJFILES=$(SRCFILES:%.c=$(BUILD_PREFIX)/%.o)
 
 qemu: $(BUILD_PREFIX)/disk.img
 	qemu-system-x86_64 $(QEMUFLAGS) $<
+debug: $(BUILD_PREFIX)/disk.img
+	qemu-system-x86_64 $(QEMUFLAGS) -S -s $<
 
 $(BUILD_PREFIX):
 	mkdir -p out/fs
@@ -59,5 +63,5 @@ $(BUILD_PREFIX)/disk.img: $(BUILD_PREFIX)/boot.bin $(BUILD_PREFIX)/part.img
 	cat $<.mbr $(BUILD_PREFIX)/part.img > $@
 
 clear: $(BUILD_PREFIX)
-	-rm -f $(BUILD_PREFIX)/**/*
+	-rm -f $(BUILD_PREFIX)/{**/,}*
 	-rm test/*.o
