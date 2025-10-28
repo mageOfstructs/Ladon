@@ -120,7 +120,7 @@ char handle_stage1(va_list *args, const char *format_start) {
     write_ptr((void *)va_arg(*args, uint32_t));
     break;
   case 'u':
-    write_uint(va_arg(*args, int), 10);
+    write_uint(va_arg(*args, unsigned int), 10);
     break;
   case 'p':
     write_ptr(va_arg(*args, void *));
