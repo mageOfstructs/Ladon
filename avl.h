@@ -2,14 +2,16 @@
 #define AVL_H
 
 #include "printf.h"
+#include "types.h"
 #include <stdbool.h>
-#define NULL (0)
 
 typedef struct tree_node {
   struct tree_node *left;
   struct tree_node *right;
   void *val;
 } tree_node_t;
+
+typedef int (*avl_cmp_t)(void *, void *);
 
 enum TREE_SIDE { LEFT, RIGHT };
 void append_ordered(tree_node_t *root, tree_node_t *n,

@@ -59,20 +59,19 @@ void append(tree_node_t *root, tree_node_t *new, enum TREE_SIDE dir) {
   append(__get_side(root, dir), new, dir);
 }
 
-void append_ordered(tree_node_t *root, tree_node_t *new,
-                    int (*cmp)(void *, void *)) {
+void append_ordered(tree_node_t *root, tree_node_t *new, avl_cmp_t cmp) {
   if (!root || !new)
     return;
   int comp_res = cmp(root->val, new->val);
   if (comp_res < 0) {
-    if (root->right)
+    if (root->right) {
       append_ordered(root->right, new, cmp);
-    else
+    } else
       root->right = new;
   } else {
-    if (root->left)
+    if (root->left) {
       append_ordered(root->left, new, cmp);
-    else
+    } else
       root->left = new;
   }
 }
