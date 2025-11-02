@@ -15,6 +15,9 @@ qemu: $(BUILD_PREFIX)/disk.img
 debug: $(BUILD_PREFIX)/disk.img
 	qemu-system-x86_64 $(QEMUFLAGS) -S -s $<
 
+generics:
+	./make_generics_avl.sh ./gen
+
 $(BUILD_PREFIX):
 	mkdir -p out/fs
 
@@ -65,3 +68,5 @@ $(BUILD_PREFIX)/disk.img: $(BUILD_PREFIX)/boot.bin $(BUILD_PREFIX)/part.img
 clear: $(BUILD_PREFIX)
 	-rm -f $(BUILD_PREFIX)/{**/,}*
 	-rm test/*.o
+
+.PHONY: qemu debug clear generics
