@@ -28,7 +28,7 @@ int main(void) {
     if (!entries[i].length)
       continue;
     totalmem += entries[i].length;
-    if (entries[i].type == 1)
+    if (entries[i].type == MMAP_USABLE)
       usram += entries[i].length;
 
     printf("%p-", entries[i].base);
